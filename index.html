@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestação de Contas — Casa Riviera Santa Cristina 13</title>
+<link rel="icon" type="image/png" href="./imagem/Favicon.png">
+<meta property="og:title" content="Dashboard Financeiro - Casa Riviera Santa Cristina 13">
+<meta property="og:description" content="Prestação de Contas e Relatório Financeiro">
+<meta property="og:image" content="./imagem/Logo.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = { theme: { extend: { colors: {
@@ -38,10 +42,13 @@ tailwind.config = { theme: { extend: { colors: {
 
   <!-- Cabeçalho -->
   <header class="flex flex-wrap items-end justify-between gap-4">
-    <div>
-      <p class="text-xs uppercase tracking-[.2em] text-petroleo/70 font-semibold">HS Visual · Gestão de Imóveis de Temporada</p>
-      <h1 class="text-2xl md:text-3xl font-bold text-petroleo">Prestação de Contas</h1>
-      <p class="text-sm text-escuro/70">Casa Riviera Santa Cristina 13 · Exercício 2026</p>
+    <div class="flex items-center gap-4">
+      <img src="./imagem/Logo.png" alt="Logo Casa Riviera" class="h-12">
+      <div>
+        <p class="text-xs uppercase tracking-[.2em] text-petroleo/70 font-semibold">HS Visual · Gestão de Imóveis de Temporada</p>
+        <h1 class="text-2xl md:text-3xl font-bold text-petroleo">Prestação de Contas</h1>
+        <p class="text-sm text-escuro/70">Casa Riviera Santa Cristina 13 · Exercício 2026</p>
+      </div>
     </div>
     <div class="flex flex-wrap gap-2 no-print">
       <button id="btnRef" class="btn" title="Atualizar dados da planilha">
