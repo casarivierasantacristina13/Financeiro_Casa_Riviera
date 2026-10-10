@@ -286,7 +286,7 @@ async function carregarAPI() {
       novos[idx].push({ d: parseISO(l.data), mes: idx, cat, desc: String(l.descricao || ""),
                         ent: Number(l.entrada) || 0, sai: Number(l.saida) || 0 });
     }
-    PROG = j.programados.map(p => {
+    PROG = j.programados.filter(p => CATS.includes(String(p.categoria || "").trim()) && Number(p.valor) > 0).map(p => {
       let i = idxMes(p.previsao), label = String(p.previsao || "Sem data definida");
       if (i < 0 && !isNaN(Date.parse(p.previsao))) {   // ex.: "Thu Oct 01 2026 00:00:00 GMT-0300"
         const d = new Date(p.previsao); i = d.getMonth(); label = MESES[i] + " / " + d.getFullYear();
