@@ -181,6 +181,26 @@ tailwind.config = { theme: { extend: { colors: {
     </div>
   </section>
 
+  <section class="card">
+    <div class="mb-4">
+      <h2 class="font-semibold text-petroleo">Comissão de administração — HS Visual (6% do faturamento)</h2>
+      <p class="text-xs text-escuro/60">Valor a retirar todo mês: 6% das entradas recebidas. Responsável: Helder (HS Visual). Atualiza sozinho conforme novos recebimentos.</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-xs uppercase tracking-wide text-petroleo bg-areia">
+            <th class="py-2 px-3 rounded-l-lg">Mês</th>
+            <th class="py-2 px-3 text-right">Entradas recebidas</th>
+            <th class="py-2 px-3 text-right rounded-r-lg">Comissão a retirar (6%)</th>
+          </tr>
+        </thead>
+        <tbody id="comBody"></tbody>
+        <tfoot id="comFoot" class="font-semibold text-petroleo"></tfoot>
+      </table>
+    </div>
+  </section>
+
   <p class="text-xs text-escuro/50 text-center">Valores em R$. Fonte: abas mensais da planilha de controle financeiro.</p>
 </div>
 
@@ -360,7 +380,7 @@ function renderMes(rows) {
   $("kRes").textContent = money(res);
   $("kRes").className = "kpi-value " + (res >= 0 ? "text-petroleo" : "text-sai");
   const pe = sel > 0 ? sum(dados[sel-1],"ent") : 0;
-  const ps = sel > 0 ? sum(dados[sel-1],"sai") : 0;
+  const ps = sel > 0 ? sum(withTaxa(dados[sel-1], sel-1),"sai") : 0;
   $("dEnt").innerHTML = delta(ent, pe);
   $("dSai").innerHTML = delta(sai, ps);
 
@@ -404,7 +424,7 @@ function renderBarra() {
   $("barVazio").classList.toggle("hidden", meses.length > 0);
   $("bar").classList.toggle("hidden", meses.length === 0);
   if (!meses.length) { if (charts.bar) { charts.bar.destroy(); delete charts.bar; } return; }
-  const e = meses.map(k => sum(dados[k],"ent")), s = meses.map(k => sum(dados[k],"sai"));
+  const e = meses.map(k => sum(dados[k],"ent")), s = meses.map(k => sum(withTaxa(dados[k],k),"sai"));
   chart("bar", "bar", {
     type: "bar",
     data: { labels: meses.map(k => MESES[k].slice(0,3)), datasets: [
@@ -425,9 +445,10 @@ function render() {
   document.querySelectorAll(".mesTxt").forEach(el => el.textContent = `${MESES[sel]} de 2026`);
   $("vazio").classList.toggle("hidden", has);
   $("conteudo").classList.toggle("hidden", !has);
-  if (has) renderMes(rows);
+  if (has) renderMes(withTaxa(rows, sel));
   renderBarra();
   renderProg();
+  renderCom();
   atualizarExport();
 }
 
@@ -455,13 +476,47 @@ function renderProg() {
 }
 // Texto do relatório para WhatsApp / e-mail do proprietário
 function atualizarExport() {
-  const rows = dados[sel];
-  const ent = sum(rows,"ent"), sai = sum(rows,"sai");
+  const rows = withTaxa(dados[sel], sel);
+  const ent = sum(rows.filter(r => r.cat !== TAXA_CAT), "ent"), sai = sum(rows,"sai");
+  const com = comissaoMes(sel);
   const prog = PROG.reduce((a,r) => a + r.valor, 0);
   const titulo = `Prestação de contas — Casa Riviera Santa Cristina 13 — ${MESES[sel]} de 2026`;
-  const txt = `${titulo}\n\nEntradas recebidas: ${money(ent)}\nSaídas / despesas: ${money(sai)}\nRepasse ao proprietário: ${money(ent - sai)}\nSaldo programado futuro (a receber): ${money(prog)}`;
+  const txt = `${titulo}\n\nEntradas recebidas: ${money(ent)}\nSaídas / despesas (incl. comissão): ${money(sai)}\nComissão HS Visual (6%): ${money(com)}\nRepasse ao proprietário: ${money(ent - sai)}\nSaldo programado futuro (a receber): ${money(prog)}`;
   $("linkWa").href = `https://wa.me/?text=${encodeURIComponent(txt)}`;
   $("linkMail").href = `mailto:?subject=${encodeURIComponent(titulo)}&body=${encodeURIComponent(txt)}`;
+}
+
+// ---------- Comissão de administração HS Visual (6% das entradas do mês) ----------
+const TAXA_CAT = "Taxa de Gestão (HS Visual)";
+const TAXA_PCT = 0.06;
+const TAXA_RESP = "Helder (HS Visual)";
+function comissaoMes(idx) {
+  const e = sum(dados[idx].filter(r => r.cat !== TAXA_CAT), "ent");
+  return Math.round(e * TAXA_PCT * 100) / 100;
+}
+// Acrescenta a comissão calculada como saída do mês (ignora qualquer linha de comissão digitada na planilha)
+function withTaxa(rows, idx) {
+  const base = rows.filter(r => r.cat !== TAXA_CAT);
+  const v = comissaoMes(idx);
+  if (!v) return base;
+  return [...base, { d: new Date(2026, idx + 1, 0), mes: idx, cat: TAXA_CAT,
+    desc: `Comissão de administração (6% do faturamento) — ${TAXA_RESP}`, ent: 0, sai: v }];
+}
+function renderCom() {
+  let te = 0, tv = 0;
+  $("comBody").innerHTML = MESES.map((m, i) => {
+    const e = sum(dados[i].filter(r => r.cat !== TAXA_CAT), "ent");
+    const v = comissaoMes(i);
+    te += e; tv += v;
+    if (!e) return `<tr class="border-t border-areia text-escuro/50"><td class="py-2 px-3">${m} / 2026</td><td class="py-2 px-3 text-right">—</td><td class="py-2 px-3 text-right">—</td></tr>`;
+    return `<tr class="border-t border-areia"><td class="py-2 px-3">${m} / 2026</td>
+      <td class="py-2 px-3 text-right tabular-nums text-ent">${money(e)}</td>
+      <td class="py-2 px-3 text-right tabular-nums font-semibold text-sai">${money(v)}</td></tr>`;
+  }).join("");
+  $("comFoot").innerHTML = `<tr class="border-t-2 border-petroleo">
+    <td class="py-2 px-3">Total acumulado no ano</td>
+    <td class="py-2 px-3 text-right tabular-nums text-ent">${money(te)}</td>
+    <td class="py-2 px-3 text-right tabular-nums text-sai">${money(tv)}</td></tr>`;
 }
 
 // ---------- Inicialização ----------
