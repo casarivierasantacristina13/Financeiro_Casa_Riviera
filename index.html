@@ -83,6 +83,11 @@ tailwind.config = { theme: { extend: { colors: {
     <p class="text-sm text-escuro/70">Mês selecionado: <strong id="mesTit" class="text-petroleo"></strong></p>
   </div>
 
+  <div id="semDados" class="hidden card text-center py-14">
+    <p class="text-lg font-semibold text-petroleo">Não foi possível ler a planilha agora</p>
+    <p class="text-sm text-escuro/60 mt-1">Verifique a conexão e clique em “Atualizar dados”.</p>
+  </div>
+
   <!-- Estado vazio -->
   <div id="vazio" class="hidden card text-center py-14">
     <div class="mx-auto w-14 h-14 rounded-full bg-areia flex items-center justify-center text-petroleo">
@@ -237,7 +242,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const st = (msg, err) => { const e=$("status"); e.textContent=msg; e.className="text-xs -mt-3 no-print "+(err?"text-sai":"text-escuro/70"); };
 
 let sel = 9;
-let apiOk = false, carregando = true;
+let apiOk = false, carregando = true, semDados = false;
 let dados = Array.from({length:12}, () => []);
 let charts = {};
 
@@ -296,7 +301,8 @@ async function carregarAPI() {
   carregando = true;
   st("Consultando a planilha…");
   try {
-    const r = await fetch(API_URL, { cache: "no-store" });
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 20000);
+    const r = await fetch(API_URL, { cache: "no-store", signal: ctl.signal }); clearTimeout(to);
     if (!r.ok) throw new Error("HTTP " + r.status);
     const j = await r.json();
     if (!Array.isArray(j.lancamentos) || !Array.isArray(j.programados)) throw new Error("formato inesperado");
@@ -317,13 +323,14 @@ async function carregarAPI() {
                cat: String(p.categoria || ""), desc: String(p.descricao || ""), valor: Number(p.valor) || 0 };
     });
     dados = novos;
-    apiOk = true;
+    apiOk = true; semDados = false;
     st(`Dados atualizados da planilha em ${new Date().toLocaleString("pt-BR")}` +
        (ignorados ? ` · ${ignorados} lançamento(s) ignorado(s) por mês ou categoria inválidos` : ""));
   } catch (e) {
-    if (!apiOk) for (const k in SEED) dados[k] = parseSheet(SEED[k], +k);
-    st(`Não foi possível ler a API (${e.message}). ${apiOk ? "Exibindo a última versão carregada" : "Exibindo dados de exemplo"}. Confira a implantação do Apps Script (acesso “Qualquer pessoa”) e se a página está hospedada onde a API pode ser acessada.`, true);
+    semDados = !apiOk;
+    st(`Não foi possível ler a planilha agora (${e.name === "AbortError" ? "tempo esgotado após 20s" : e.message}). ${apiOk ? "Exibindo a última versão carregada" : "Nenhum dado foi carregado"}. Confira a implantação do Apps Script (acesso “Qualquer pessoa”) e se a página está hospedada onde a API pode ser acessada.`, true);
   }
+  carregando = false;
   render();
 }
 
@@ -443,7 +450,8 @@ function renderBarra() {
 }
 
 function render() {
-  if (carregando) { $("vazio").classList.add("hidden"); $("conteudo").classList.add("hidden"); return; }
+  $("semDados").classList.toggle("hidden", !(semDados && !carregando));
+  if (carregando || semDados) { $("vazio").classList.add("hidden"); $("conteudo").classList.add("hidden"); return; }
   const rows = dados[sel];
   const has = rows.length > 0;
   $("mes").value = sel;
