@@ -7,41 +7,29 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = { theme: { extend: { colors: {
-  petroleo: '#1B3A4B', areia: '#EDE6D6', escuro: '#10181C', ent: '#2E7D5B', sai: '#B4475A' } } } };
+  petroleo: '#15171C', areia: '#E6E9EE', escuro: '#15171C', ent: '#1E9E6A', sai: '#E5584B' } } } };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --pet:#1B3A4B; --areia:#EDE6D6; --esc:#10181C; }
-  body { font-family: Inter, system-ui, -apple-system, sans-serif; background:#F4F0E6; color:var(--esc); }
-  .card { background:#fff; border:1px solid #E4DCCB; border-radius:16px; padding:20px; box-shadow:0 1px 2px rgba(16,24,28,.04); }
-  .btn { display:inline-flex; align-items:center; gap:8px; border:1px solid #CFC5AE; background:#fff; color:var(--pet);
+  :root { --pet:#15171C; --areia:#E6E9EE; --esc:#15171C; }
+  body { font-family: Inter, system-ui, -apple-system, sans-serif; background:#EEF0F3; color:var(--esc); }
+  .card { background:#fff; border:1px solid #DDE1E8; border-radius:16px; padding:20px; box-shadow:0 1px 2px rgba(16,24,28,.04); }
+  .btn { display:inline-flex; align-items:center; gap:8px; border:1px solid #C9CFD9; background:#fff; color:var(--pet);
          padding:8px 14px; border-radius:10px; font-size:14px; font-weight:600; }
   .btn:hover { background:var(--areia); }
   .btn-primary { background:var(--pet); color:#fff; border-color:var(--pet); }
-  .btn-primary:hover { background:#244B60; }
+  .btn-primary:hover { background:#2A2D35; }
   .chip { display:inline-block; font-size:12px; padding:2px 8px; border-radius:999px; background:var(--areia); color:var(--pet); }
-  .kpi-label { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#5B6B73; font-weight:600; }
+  .kpi-label { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#5F6672; font-weight:600; }
   .kpi-value { font-size:28px; font-weight:700; color:var(--pet); margin-top:6px; font-variant-numeric:tabular-nums; }
-  .card-destaque { background:var(--pet); border-color:var(--pet); color:#fff; }
-  .card-destaque .kpi-label { color:rgba(255,255,255,.65); }
-  .card-destaque .destaque-valor { color:#fff; }
-  .card-destaque .destaque-div { border-top:1px solid rgba(255,255,255,.2); }
-  .card-destaque .destaque-nota { color:rgba(255,255,255,.72); }
-  .card-destaque .negativo { color:#F6B8C1; }
-  select { border:1px solid #CFC5AE; border-radius:10px; padding:8px 12px; background:#fff; font-size:14px; color:var(--esc); }
+  select { border:1px solid #C9CFD9; border-radius:10px; padding:8px 12px; background:#fff; font-size:14px; color:var(--esc); }
   .print-only { display:none; }
   @media print {
     .no-print { display:none !important; }
     .print-only { display:block !important; }
     body { background:#fff; }
     .card { box-shadow:none; break-inside:avoid; }
-    .card-destaque { background:#fff !important; border-color:#E4DCCB !important; color:var(--esc) !important; }
-    .card-destaque .kpi-label { color:#5B6B73 !important; }
-    .card-destaque .destaque-valor { color:var(--pet) !important; }
-    .card-destaque .destaque-div { border-top-color:#E4DCCB !important; }
-    .card-destaque .destaque-nota { color:#5B6B73 !important; }
-    .card-destaque .negativo { color:var(--sai) !important; }
   }
 </style>
 </head>
@@ -109,25 +97,18 @@ tailwind.config = { theme: { extend: { colors: {
     <p class="text-sm text-escuro/60 mt-1">Ainda não há lançamentos em <span class="mesTxt"></span>.</p>
   </div>
 
-  <!-- Saldo em conta (acumulado, independe do mês selecionado) -->
-  <section id="blocoSaldo" class="card card-destaque hidden">
-      <p class="kpi-label">Saldo em conta hoje</p>
-      <p id="aSaldo" class="destaque-valor text-4xl md:text-5xl font-bold tabular-nums mt-1 leading-none">—</p>
-      <p class="destaque-nota text-xs mt-3">Tudo o que entrou menos tudo o que saiu desde o início da planilha (agosto/2026) até hoje, já com a comissão de 6% da HS Visual. Começa do zero, sem saldo anterior.</p>
-      <div class="destaque-div grid grid-cols-2 gap-3 mt-4 pt-4">
-        <div>
-          <p class="kpi-label">Total que entrou</p>
-          <p id="aEnt" class="destaque-valor text-lg font-bold tabular-nums mt-1"></p>
-        </div>
-        <div>
-          <p class="kpi-label">Total que saiu (com comissão)</p>
-          <p id="aSai" class="destaque-valor text-lg font-bold tabular-nums mt-1"></p>
-        </div>
-      </div>
-  </section>
-
   <!-- Conteúdo do mês -->
   <div id="conteudo" class="space-y-6">
+    <section class="card">
+      <h2 class="font-semibold text-petroleo">Quanto tem na conta agora</h2>
+      <p class="text-xs text-escuro/60 mb-3">Saldo considerando tudo o que entrou menos tudo o que saiu desde o início da planilha (agosto/2026) até hoje, com a comissão de 6%. Começa do zero, sem saldo anterior.</p>
+      <div class="grid md:grid-cols-3 gap-4">
+        <div><p class="kpi-label">Total que entrou</p><p id="aEnt" class="kpi-value text-ent"></p></div>
+        <div><p class="kpi-label">Total que saiu (com comissão)</p><p id="aSai" class="kpi-value text-sai"></p></div>
+        <div class="rounded-xl p-3" style="background:var(--areia)"><p class="kpi-label">Saldo em conta hoje</p><p id="aSaldo" class="text-3xl font-bold text-petroleo tabular-nums mt-1"></p></div>
+      </div>
+    </section>
+
     <section class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
       <div class="card">
         <p class="kpi-label">Total de entradas recebidas</p>
@@ -244,7 +225,7 @@ const CATS = ["Airbnb","VRBO / Stays","Reserva Direta","Outras Receitas",
   "Energia / Luz (Ceripa)","Água / Gás","Internet / Telecom","Limpeza / Enxoval",
   "Manutenção / Piscina / Jardinagem","Condomínio / IPTU","Taxa de Gestão (HS Visual)","Imprevistos / Outros","Marketing"];
 const API_URL = "https://script.google.com/macros/s/AKfycbwhXe5xzV1EaUcUwRV1QDWGMZBOG_EViNWOms5s-zdUWWNYcKMaoT90TpYoRQ80HIOd/exec";
-const PAL = ["#1B3A4B","#4F7A8C","#8FB3C0","#C9A66B","#B4475A","#D98E73","#6B8F71","#7C6F64"];
+const PAL = ["#15171C","#4F7BE8","#8FA6F5","#FFC93C","#E5584B","#F79A8F","#2FB68A","#9AA3AE"];
 
 // Dados de exemplo (mesmo padrão de lançamentos da planilha; Setembro completo, Outubro parcial)
 const SEED = {
@@ -448,9 +429,9 @@ function renderBarra() {
   chart("bar", "bar", {
     type: "bar",
     data: { labels: meses.map(k => MESES[k].slice(0,3)), datasets: [
-      { label: "Entradas", data: e, backgroundColor: "#2E7D5B", borderRadius: 6 },
-      { label: "Saídas", data: s, backgroundColor: "#B4475A", borderRadius: 6 },
-      { label: "Saldo líquido", data: e.map((v,i) => v - s[i]), backgroundColor: "#1B3A4B", borderRadius: 6 }
+      { label: "Entradas", data: e, backgroundColor: "#1E9E6A", borderRadius: 6 },
+      { label: "Saídas", data: s, backgroundColor: "#E5584B", borderRadius: 6 },
+      { label: "Saldo líquido", data: e.map((v,i) => v - s[i]), backgroundColor: "#15171C", borderRadius: 6 }
     ]},
     options: baseOpts({ scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString("pt-BR") } } },
       plugins: { legend: { position: "bottom" }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.raw)}` } } } })
@@ -459,7 +440,6 @@ function renderBarra() {
 
 function render() {
   $("semDados").classList.toggle("hidden", !(semDados && !carregando));
-  $("blocoSaldo").classList.toggle("hidden", carregando || semDados);
   if (carregando || semDados) { $("vazio").classList.add("hidden"); $("conteudo").classList.add("hidden"); return; }
   const rows = dados[sel];
   const has = rows.length > 0;
@@ -556,7 +536,7 @@ function renderAcum() {
   $("aEnt").textContent = money(e);
   $("aSai").textContent = money(s);
   $("aSaldo").textContent = money(saldo);
-  $("aSaldo").className = "destaque-valor text-4xl md:text-5xl font-bold tabular-nums mt-1 leading-none " + (saldo >= 0 ? "" : "negativo");
+  $("aSaldo").className = "text-3xl font-bold tabular-nums mt-1 " + (saldo >= 0 ? "text-petroleo" : "text-sai");
 }
 
 // ---------- Inicialização ----------
