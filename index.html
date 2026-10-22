@@ -23,6 +23,12 @@ tailwind.config = { theme: { extend: { colors: {
   .chip { display:inline-block; font-size:12px; padding:2px 8px; border-radius:999px; background:var(--areia); color:var(--pet); }
   .kpi-label { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#5B6B73; font-weight:600; }
   .kpi-value { font-size:28px; font-weight:700; color:var(--pet); margin-top:6px; font-variant-numeric:tabular-nums; }
+  .card-destaque { background:var(--pet); border-color:var(--pet); color:#fff; }
+  .card-destaque .kpi-label { color:rgba(255,255,255,.65); }
+  .card-destaque .destaque-valor { color:#fff; }
+  .card-destaque .destaque-div { border-top:1px solid rgba(255,255,255,.2); }
+  .card-destaque .destaque-nota { color:rgba(255,255,255,.72); }
+  .card-destaque .negativo { color:#F6B8C1; }
   select { border:1px solid #CFC5AE; border-radius:10px; padding:8px 12px; background:#fff; font-size:14px; color:var(--esc); }
   .print-only { display:none; }
   @media print {
@@ -30,6 +36,12 @@ tailwind.config = { theme: { extend: { colors: {
     .print-only { display:block !important; }
     body { background:#fff; }
     .card { box-shadow:none; break-inside:avoid; }
+    .card-destaque { background:#fff !important; border-color:#E4DCCB !important; color:var(--esc) !important; }
+    .card-destaque .kpi-label { color:#5B6B73 !important; }
+    .card-destaque .destaque-valor { color:var(--pet) !important; }
+    .card-destaque .destaque-div { border-top-color:#E4DCCB !important; }
+    .card-destaque .destaque-nota { color:#5B6B73 !important; }
+    .card-destaque .negativo { color:var(--sai) !important; }
   }
 </style>
 </head>
@@ -96,6 +108,23 @@ tailwind.config = { theme: { extend: { colors: {
     <p class="mt-4 text-lg font-semibold text-petroleo">Sem movimentações no período</p>
     <p class="text-sm text-escuro/60 mt-1">Ainda não há lançamentos em <span class="mesTxt"></span>.</p>
   </div>
+
+  <!-- Saldo em conta (acumulado, independe do mês selecionado) -->
+  <section id="blocoSaldo" class="card card-destaque hidden">
+      <p class="kpi-label">Saldo em conta hoje</p>
+      <p id="aSaldo" class="destaque-valor text-4xl md:text-5xl font-bold tabular-nums mt-1 leading-none">—</p>
+      <p class="destaque-nota text-xs mt-3">Tudo o que entrou menos tudo o que saiu desde o início da planilha (agosto/2026) até hoje, já com a comissão de 6% da HS Visual. Começa do zero, sem saldo anterior.</p>
+      <div class="destaque-div grid grid-cols-2 gap-3 mt-4 pt-4">
+        <div>
+          <p class="kpi-label">Total que entrou</p>
+          <p id="aEnt" class="destaque-valor text-lg font-bold tabular-nums mt-1"></p>
+        </div>
+        <div>
+          <p class="kpi-label">Total que saiu (com comissão)</p>
+          <p id="aSai" class="destaque-valor text-lg font-bold tabular-nums mt-1"></p>
+        </div>
+      </div>
+  </section>
 
   <!-- Conteúdo do mês -->
   <div id="conteudo" class="space-y-6">
@@ -328,7 +357,7 @@ async function carregarAPI() {
        (ignorados ? ` · ${ignorados} lançamento(s) ignorado(s) por mês ou categoria inválidos` : ""));
   } catch (e) {
     semDados = !apiOk;
-    st(`Não foi possível ler a planilha agora (${e.name === "AbortError" ? "tempo esgotado após 20s" : e.message}). ${apiOk ? "Exibindo a última versão carregada" : "Nenhum dado foi carregado"}. Confira a implantação do Apps Script (acesso “Qualquer pessoa”) e se a página está hospedada onde a API pode ser acessada.`, true);
+    st(`Não foi possível ler a API (${e.name === "AbortError" ? "tempo esgotado" : e.message}). ${apiOk ? "Exibindo a última versão carregada" : "Exibindo dados de exemplo"}. Confira a implantação do Apps Script (acesso “Qualquer pessoa”) e se a página está hospedada onde a API pode ser acessada.`, true);
   }
   carregando = false;
   render();
@@ -430,6 +459,7 @@ function renderBarra() {
 
 function render() {
   $("semDados").classList.toggle("hidden", !(semDados && !carregando));
+  $("blocoSaldo").classList.toggle("hidden", carregando || semDados);
   if (carregando || semDados) { $("vazio").classList.add("hidden"); $("conteudo").classList.add("hidden"); return; }
   const rows = dados[sel];
   const has = rows.length > 0;
@@ -442,6 +472,7 @@ function render() {
   renderBarra();
   renderProg();
   renderCom();
+  renderAcum();
   atualizarExport();
 }
 
@@ -510,6 +541,22 @@ function renderCom() {
     <td class="py-2 px-3">Total acumulado no ano</td>
     <td class="py-2 px-3 text-right tabular-nums text-ent">${money(te)}</td>
     <td class="py-2 px-3 text-right tabular-nums text-sai">${money(tv)}</td></tr>`;
+}
+
+function renderAcum() {
+  const hoje = new Date();
+  const ate = hoje.getFullYear() === 2026 ? hoje.getMonth() : 11;
+  let e = 0, s = 0;
+  for (let i = 0; i <= ate; i++) {
+    e += sum(dados[i].filter(r => r.cat !== TAXA_CAT), "ent");
+    s += sum(withTaxa(dados[i], i), "sai");
+  }
+  e = Math.round(e * 100) / 100; s = Math.round(s * 100) / 100;
+  const saldo = Math.round((e - s) * 100) / 100;
+  $("aEnt").textContent = money(e);
+  $("aSai").textContent = money(s);
+  $("aSaldo").textContent = money(saldo);
+  $("aSaldo").className = "destaque-valor text-4xl md:text-5xl font-bold tabular-nums mt-1 leading-none " + (saldo >= 0 ? "" : "negativo");
 }
 
 // ---------- Inicialização ----------
