@@ -237,6 +237,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const st = (msg, err) => { const e=$("status"); e.textContent=msg; e.className="text-xs -mt-3 no-print "+(err?"text-sai":"text-escuro/70"); };
 
 let sel = 9;
+let apiOk = false, carregando = true;
 let dados = Array.from({length:12}, () => []);
 let charts = {};
 
@@ -292,7 +293,8 @@ const idxMes = txt => { const n = norm(String(txt || "")); return MESES.findInde
 
 // Lê a API do Apps Script: lançamentos (realizados) e programados
 async function carregarAPI() {
-  st("Consultando a API do Google Apps Script…");
+  carregando = true;
+  st("Consultando a planilha…");
   try {
     const r = await fetch(API_URL, { cache: "no-store" });
     if (!r.ok) throw new Error("HTTP " + r.status);
@@ -315,10 +317,12 @@ async function carregarAPI() {
                cat: String(p.categoria || ""), desc: String(p.descricao || ""), valor: Number(p.valor) || 0 };
     });
     dados = novos;
-    st(`Dados atualizados pela API · ${new Date().toLocaleTimeString("pt-BR")}` +
+    apiOk = true;
+    st(`Dados atualizados da planilha em ${new Date().toLocaleString("pt-BR")}` +
        (ignorados ? ` · ${ignorados} lançamento(s) ignorado(s) por mês ou categoria inválidos` : ""));
   } catch (e) {
-    st(`Não foi possível ler a API (${e.message}). Exibindo a última versão carregada. Confira a implantação do Apps Script (acesso “Qualquer pessoa”) e se a página está hospedada onde a API pode ser acessada.`, true);
+    if (!apiOk) for (const k in SEED) dados[k] = parseSheet(SEED[k], +k);
+    st(`Não foi possível ler a API (${e.message}). ${apiOk ? "Exibindo a última versão carregada" : "Exibindo dados de exemplo"}. Confira a implantação do Apps Script (acesso “Qualquer pessoa”) e se a página está hospedada onde a API pode ser acessada.`, true);
   }
   render();
 }
@@ -340,6 +344,7 @@ async function atualizar_legado() {
   } else {
     st(`Dados atualizados: ${ok} aba(s) lida(s)${falhas ? `, ${falhas} sem acesso` : ""} · ${new Date().toLocaleTimeString("pt-BR")}`);
   }
+  carregando = false;
   render();
 }
 
@@ -438,6 +443,7 @@ function renderBarra() {
 }
 
 function render() {
+  if (carregando) { $("vazio").classList.add("hidden"); $("conteudo").classList.add("hidden"); return; }
   const rows = dados[sel];
   const has = rows.length > 0;
   $("mes").value = sel;
@@ -531,7 +537,6 @@ function init() {
   $("fileIn").onchange = e => importar([...e.target.files]);
   $("btnPdf").onclick = () => window.print();
 
-  for (const k in SEED) dados[k] = parseSheet(SEED[k], +k);
   sel = 9; // mês corrente (Outubro)
   st("Dados do extrato oficial do Airbnb e da planilha de controle. Use “Atualizar dados” ou “Importar CSV” para novas leituras.");
   render();
