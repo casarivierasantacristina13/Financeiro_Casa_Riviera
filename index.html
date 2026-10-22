@@ -334,27 +334,6 @@ async function carregarAPI() {
   render();
 }
 
-async function atualizar_legado() {
-  st("Conectando à planilha…");
-  let ok = 0, falhas = 0;
-  for (let i = 0; i < 12; i++) {
-    try {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(MESES[i])}`;
-      const r = await fetch(url);
-      if (!r.ok) throw new Error(r.status);
-      const rows = parseSheet(await r.text(), i);
-      if (rows) { dados[i] = rows; ok++; } else falhas++;
-    } catch (e) { falhas++; }
-  }
-  if (ok === 0) {
-    st("Não foi possível acessar a planilha a partir deste painel. Use “Importar CSV” para atualizar os dados.", true);
-  } else {
-    st(`Dados atualizados: ${ok} aba(s) lida(s)${falhas ? `, ${falhas} sem acesso` : ""} · ${new Date().toLocaleTimeString("pt-BR")}`);
-  }
-  carregando = false;
-  render();
-}
-
 async function importar(files) {
   const ignorados = [];
   let ok = 0;
