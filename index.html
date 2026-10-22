@@ -88,6 +88,16 @@ tailwind.config = { theme: { extend: { colors: {
     <p class="text-sm text-escuro/60 mt-1">Verifique a conexão e clique em “Atualizar dados”.</p>
   </div>
 
+  <section id="saldoDestaque" class="hidden rounded-2xl p-6 text-white" style="background:#15171C">
+    <p class="text-xs uppercase tracking-widest text-white/60 font-semibold">Saldo em conta hoje</p>
+    <p id="aSaldo" class="text-4xl md:text-5xl font-bold tabular-nums mt-2"></p>
+    <p class="text-xs md:text-sm text-white/60 mt-3">Tudo o que entrou menos tudo o que saiu desde o início da planilha (agosto/2026) até hoje, já com a comissão de 6% da HS Visual. Começa do zero, sem saldo anterior.</p>
+    <div class="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/15">
+      <div><p class="text-xs uppercase tracking-widest text-white/60 font-semibold">Total que entrou</p><p id="aEnt" class="text-lg font-bold tabular-nums mt-1"></p></div>
+      <div><p class="text-xs uppercase tracking-widest text-white/60 font-semibold">Total que saiu (com comissão)</p><p id="aSai" class="text-lg font-bold tabular-nums mt-1"></p></div>
+    </div>
+  </section>
+
   <!-- Estado vazio -->
   <div id="vazio" class="hidden card text-center py-14">
     <div class="mx-auto w-14 h-14 rounded-full bg-areia flex items-center justify-center text-petroleo">
@@ -99,16 +109,6 @@ tailwind.config = { theme: { extend: { colors: {
 
   <!-- Conteúdo do mês -->
   <div id="conteudo" class="space-y-6">
-    <section class="card">
-      <h2 class="font-semibold text-petroleo">Quanto tem na conta agora</h2>
-      <p class="text-xs text-escuro/60 mb-3">Saldo considerando tudo o que entrou menos tudo o que saiu desde o início da planilha (agosto/2026) até hoje, com a comissão de 6%. Começa do zero, sem saldo anterior.</p>
-      <div class="grid md:grid-cols-3 gap-4">
-        <div><p class="kpi-label">Total que entrou</p><p id="aEnt" class="kpi-value text-ent"></p></div>
-        <div><p class="kpi-label">Total que saiu (com comissão)</p><p id="aSai" class="kpi-value text-sai"></p></div>
-        <div class="rounded-xl p-3" style="background:var(--areia)"><p class="kpi-label">Saldo em conta hoje</p><p id="aSaldo" class="text-3xl font-bold text-petroleo tabular-nums mt-1"></p></div>
-      </div>
-    </section>
-
     <section class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
       <div class="card">
         <p class="kpi-label">Total de entradas recebidas</p>
@@ -440,6 +440,7 @@ function renderBarra() {
 
 function render() {
   $("semDados").classList.toggle("hidden", !(semDados && !carregando));
+  $("saldoDestaque").classList.toggle("hidden", carregando || semDados || !apiOk);
   if (carregando || semDados) { $("vazio").classList.add("hidden"); $("conteudo").classList.add("hidden"); return; }
   const rows = dados[sel];
   const has = rows.length > 0;
@@ -536,7 +537,7 @@ function renderAcum() {
   $("aEnt").textContent = money(e);
   $("aSai").textContent = money(s);
   $("aSaldo").textContent = money(saldo);
-  $("aSaldo").className = "text-3xl font-bold tabular-nums mt-1 " + (saldo >= 0 ? "text-petroleo" : "text-sai");
+  $("aSaldo").style.color = saldo >= 0 ? "#FFFFFF" : "#F5B8B1";
 }
 
 // ---------- Inicialização ----------
